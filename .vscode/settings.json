@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "ex7.h": "c",
+        "hsp_timer.h": "c",
+        "lab1.h": "c",
+        "hsp_gpio.h": "c",
+        "project1.h": "c",
+        "systick.h": "c",
+        "stdio.h": "c"
+    }
+}

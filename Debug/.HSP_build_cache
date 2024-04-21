@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BuildDb>
+    <Tool>
+        <Name>linker</Name>
+        <Parent>
+            <Path>D:\Files\SJTU\second_second\engineering4-D\HSPv2 _C8\Debug\Exe\HSP.out</Path>
+            <Output>
+                <Path>D:\Files\SJTU\second_second\engineering4-D\HSPv2 _C8\Debug\List\HSP.map</Path>
+            </Output>
+        </Parent>
+        <Parent>
+            <Path>D:\IAR.work\HSPv2\Debug\Exe\HSP.out</Path>
+            <Output>
+                <Path>D:\IAR.work\HSPv2\Debug\List\HSP.map</Path>
+            </Output>
+        </Parent>
+        <Parent>
+            <Path>F:\IAR files\HSPv2 _C8\Debug\Exe\HSP.out</Path>
+            <Output>
+                <Path>F:\IAR files\HSPv2 _C8\Debug\List\HSP.map</Path>
+            </Output>
+        </Parent>
+    </Tool>
+</BuildDb>
