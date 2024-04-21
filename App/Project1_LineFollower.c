@@ -13,49 +13,31 @@ extern image2_t image2_temp;		// show 1/3 of the full size screen
 extern uint8_t image_ready;			// MT9V034 new data frame ready in buffer
 extern uint8_t image_size;				// 0: full size; 1: half size; 2: 1/3 sized
 extern int16_t encoder_speed;
-static uint8_t start_line_count = 0; // 起点线检测次数
-static uint32_t start_line_time = 0; // 通过起点线的时间
+
+uint16_t line_detection_count = 0;
 bool if_start_line = false; // 是否检测到起点线
+static bool isReversing = false; // 是否正在倒退
+static bool needToStop = false;  // 是否需要停车
+
 
 // Function prototypes
 void perform_action_based_on_line_type();
 void beeper_beep(uint32_t duration_ms);
 void beep();
 uint16_t calculate_speed(uint16_t steering_signal);
-uint16_t detect_line_edges(image2_t image, uint8_t* edges);
+uint16_t detect_black_points(image2_t image, uint8_t row);
+void check_and_perform_stop();
 
 
 
 
 uint16_t calculate_speed(uint16_t steering_signal) {
     // 使用分段函数根据舵机信号调整速度
-    return 19;
+    return 20;
 }
 
 
-
-
-// // Project#1: Line Following Robot (LFR)
-// bool detect_start_line(image2_t image) {
-//     int center_x = 80;
-//     int center_y = 64;
-//     int black_count = 0;
-
-//     // 检测十字中心点附近的黑色像素
-//     for (int i = center_y - 5; i <= center_y + 5; i++) {
-//         for (int j = center_x - 5; j <= center_x + 5; j++) {
-//             if (image[i][j] == 0) {
-//                 black_count++;
-//             }
-//         }
-//     }
-
-//     // 简单的判定：如果中心区域有足够多的黑色像素，我们认为检测到了起点线
-//     return black_count > 50; // 这个阈值可能需要根据实际情况调整
-// }
-// 外部变量，SysTick 计数器
 extern volatile uint32_t sys_tick_counter;
-
 
 
 void Project_LFR(void)
@@ -79,84 +61,10 @@ void Project_LFR(void)
 	image_ready = RESET;
 	
 	while(1)
-	{
-        // if (!PUSH())			// push button pressed        
-        // {
-        //     //delay_1ms(50);		// de-jitter
-        //     if (!PUSH())
-        //     {
-        //         while(!PUSH());
-        //         dc = 0;
-        //     }
-        // }
-		
-		// state_pha = PHA2();			state_phb = PHB2();
-		// if((state_pha_t != state_pha) || (state_phb_t != state_phb))
-		// {
-		// 	if(state_phb_t == state_phb)
-		// 	{
-		// 		if(SET == state_phb)
-		// 		{
-		// 			if(RESET == state_pha) dc++;
-		// 			else if(0 < dc) dc--;
-		// 		}
-		// 		else
-		// 		{
-		// 			if(SET == state_pha) dc++;
-		// 			else if(0 < dc) dc--;
-		// 		}
-		// 	}
-		// 	else
-		// 	{
-		// 		if(SET == state_pha)
-		// 		{
-		// 			if(SET == state_phb) dc++;
-		// 			else if(0 < dc) dc--;
-		// 		}
-		// 		else
-		// 		{
-		// 			if(RESET == state_pha) dc++;
-		// 			else if(0 < dc) dc--;
-		// 		}
-		// 	}
-		// 	state_pha_t = state_pha;
-		// 	state_phb_t = state_phb;
-        //     //delay_1ms(10);		// de-jitter
-		// }
-		
-		// hsp_tft18_show_int16(8, 0, dc);
-        // PWM output stage, subjected to duty cycle limits
-		// if(35 < dc)
-		// 	dc = 35;
-		
-		// camera image processing
+	{      
 		if(image_ready == SET)
 		{
-			//threshold = hsp_image2_threshold_otsu(image2_use);
-			//threshold = hsp_image2_threshold_mean(image2_use);
-			//threshold = hsp_image2_threshold_minmax(image2_use);
-			//hsp_image2_show_dma(image2_use);
-			//hsp_image2_show_dma(image2_show);
-			// if(detect_start_line(image2_temp))
-            // {
-            //     start_line_count++;
-            //     if(start_line_count == 1) // 第一次检测到起点线
-            //     {
-            //         start_line_time = sys_tick_counter; // 记录时间
-            //     }
-            //     else if(start_line_count == 2) // 第二次检测到起点线
-            //     {
-            //         uint32_t current_time = sys_tick_counter;
-            //         uint32_t time_elapsed = current_time - start_line_time;
-
-            //         // 假设小车的速度约为1米/秒
-            //         if(time_elapsed > 500) // 如果超过1000毫秒
-            //         {
-            //             hsp_motor_voltage(MOTORF, 0); // 停止电机
-            //             break; // 退出循环
-            //         }
-            //     }
-            // }
+			
 			if(SW2())
 			{
 				hsp_motor_voltage(MOTORF, dc);		// run forward
@@ -171,16 +79,36 @@ void Project_LFR(void)
 			dc = calculate_speed(pw);
 			perform_action_based_on_line_type();
 
-			//detect initial line
-			// if_start_line = detect_start_line(image2_temp);
-			//如果检测到起点线，LED闪烁	
-			// if(if_start_line) {
-			// 	LED1_TOGGLE();
-			// }
-			// //如果检测到起点线，且通过了起点线，减速
-			// if(if_start_line && start_line_count == 2) {
-			// 	dc = dc / SLOW_DOWN_FACTOR;
-			// }
+		
+
+            // // 图像显示和其他界面更新逻辑
+            // if (!SW1()) {
+            //     hsp_image2_show_dma(image2_use);
+            // } else {
+            //     hsp_image2_show_dma(image2_temp);
+            // }
+            // hsp_tft18_set_region(0, 0, TFT_X_MAX-1, TFT_Y_MAX-1);
+            // hsp_tft18_show_int16(0, 0, pw);
+            // hsp_tft18_show_int16_color(56, 0, encoder_speed, WHITE, BLACK);
+
+            // image_ready = RESET;
+
+			check_and_perform_stop();
+
+        	if (needToStop) {
+                hsp_motor_voltage(MOTORF, 0); // 停止电机
+                needToStop = false;
+                isReversing = true;
+				 // 设置倒退标志
+				 delay_1ms(1000);
+            } ;
+			
+			if (isReversing) {
+                hsp_motor_voltage(MOTORB, -20); // 倒退电机速度
+				delay_1ms(1000);
+				hsp_motor_voltage(MOTORF, 0);
+				exit(0) ;
+            } ;
 
 			if(pw == 0)
 			{
@@ -240,21 +168,26 @@ void Project_LFR(void)
 const int BasePulseWidth = 1500;
 const double Kp = 10.0;  // Proportional gain
 const double Kd = 5.0;   // Derivative gain
-
+#define BLACKPOINTS_THRESHOLD 50
 // Variables
 int last_center = 94;
 static uint8_t last_gte_ok = RESET;
 
 uint16_t line_type = 0; // 0表示中线，1表示起始线，2表示十字线
-uint16_t line_detection_count = 0;
+
 
 uint16_t hsp_image_judge(image2_t image) {
     uint16_t pw = 0;
     uint8_t gte_l, gte_r, gte_ok;
     uint8_t gte_l_idx, gte_r_idx, gte_c_idx;
     int current_center;
-	uint8_t edges[IMAGEW2] = {0}; // 存储边沿位置的数组
-	uint16_t edge_count = detect_line_edges(image, edges); // 检测边沿并返回边沿数量
+
+	uint16_t black_points1 = detect_black_points(image, 20);  // 检测第20行的黑点数
+	uint16_t black_points2 = detect_black_points(image, 26);  // 检测第26行的黑点数
+	uint16_t black_points3 = detect_black_points(image, 14);  // 检测第14行的黑点数
+
+
+	bool is_black_ok = black_points1 > BLACKPOINTS_THRESHOLD || black_points2 > BLACKPOINTS_THRESHOLD || black_points3 > BLACKPOINTS_THRESHOLD;
 
     gte_l = gte_r = gte_ok = RESET;
 	
@@ -282,19 +215,23 @@ uint16_t hsp_image_judge(image2_t image) {
         last_center = current_center;
         last_gte_ok = gte_ok;
 
-	// 根据边沿的数量和位置确定线的类型
-    if (edge_count == 2) {
-        // 中线
-        line_type = 0;
-    } else if (edge_count > 3) {
-        // 根据边沿计数和上一次的线类型决定是起始线还是十字线
-        if (line_detection_count % 2 == 0) {
-            line_type = 1; // 起始线
-        } else {
-            line_type = 2; // 十字线
-        }
-        line_detection_count++;
-    }
+		// 根据黑点数判断线的类型
+		if(is_black_ok) //非中线,采用奇偶判断具体是起始线还是十字线
+		{
+			line_detection_count++;
+			if(line_detection_count % 2 == 1) // 起始线
+			{
+				line_type = 1;
+			}
+			else // 十字线
+			{
+				line_type = 2;
+			}
+		}
+		else // 中线
+		{
+			line_type = 0;
+		}
 
 
     } else if (last_gte_ok) {
@@ -309,25 +246,21 @@ uint16_t hsp_image_judge(image2_t image) {
 }
 
 
-uint16_t detect_line_edges(image2_t image, uint8_t* edges) {
-    uint16_t edge_count = 0; // 记录边沿的数量
-    uint8_t is_black = 0; // 当前像素是否为黑色
 
-    // 检测边沿
-    for (int i = 2; i < IMAGEW2 - 2; i++) {
-        // 当检测到黑到白的边沿时
-        if (image[20][i] == 0 && image[20][i + 1] == 255) {
-            edges[edge_count++] = i; // 记录边沿位置
-        }
-        // 当检测到白到黑的边沿时
-        else if (image[20][i] == 255 && image[20][i + 1] == 0 ) {
-            edges[edge_count++] = i; // 记录边沿位置
+
+
+uint16_t detect_black_points(image2_t image, uint8_t row) {
+    uint16_t black_points = 0;
+
+    // 统计行中黑色点的数量
+    for (int i = 0; i < IMAGEW2; i++) {
+        if (image[row][i] == 0) {
+            black_points++;
         }
     }
-    return edge_count; // 返回边沿的数量
+    
+    return black_points;
 }
-
-
 
 void beeper_beep(uint32_t duration_ms) {
     // 控制蜂鸣器鸣叫指定的毫秒数
@@ -355,4 +288,16 @@ void perform_action_based_on_line_type() {
 		delay_1ms(100);
 		beep();
 	}
+	//将line_detection_count显示在数码管上
+	hsp_cat9555_seg7_decimal(line_detection_count);
+
+}
+
+
+void check_and_perform_stop() {
+    
+	if (line_detection_count == 5) {
+		needToStop = true; // 设置停车标志
+	}
+    
 }

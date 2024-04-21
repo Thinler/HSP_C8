@@ -21,7 +21,7 @@ uint8_t image_ready;				// MT9V034 new data frame ready in buffer
 
 uint8_t image_size = 0;				// 0: full size; 1: half size; 2: 1/3 sized
 
-__attribute__((aligned(32))) uint8_t img[35840];
+__attribute__((aligned(32))) uint8_t img[35840]; //意思是将img数组的首地址对齐到32字节的地址上
 __attribute__((aligned(32))) uint8_t img2[12800];
 
 void Ex7_1_dcam(void)
@@ -328,7 +328,7 @@ void hsp_image2_binary_minmax(image2_t input, image2_t output)
     }
 }
 
-// threshold mode: OTSU
+// threshold mode: OTSU 
 // https://blog.csdn.net/Youngmember/article/details/134622033
 uint8_t hsp_image_threshold_otsu(image_t image)
 {

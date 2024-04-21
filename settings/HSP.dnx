@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <settings>
     <Jet>
+        <OnlineReset>Software</OnlineReset>
         <DisableInterrupts>0</DisableInterrupts>
         <LeaveRunning>0</LeaveRunning>
         <MultiCoreRunAll>0</MultiCoreRunAll>
         <CpuHaltOnBreakpointSet>0</CpuHaltOnBreakpointSet>
-        <OnlineReset>Software</OnlineReset>
         <JetConnSerialNo>CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908</JetConnSerialNo>
         <JetConnFoundProbes>CMSIS-DAP v1:000000800671ff544884654867163920a5a5a5a597969908:CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908:</JetConnFoundProbes>
         <PrevWtdReset>Software</PrevWtdReset>
@@ -15,7 +15,7 @@
         <FirstRun>0</FirstRun>
     </PlDriver>
     <DebugChecksum>
-        <Checksum>3846791347</Checksum>
+        <Checksum>1791994655</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -47,8 +47,8 @@
     <SWOManager>
         <SamplingDivider>8192</SamplingDivider>
         <OverrideClock>0</OverrideClock>
-        <CpuClock>2524845128218271570</CpuClock>
-        <SwoClock>7957695011148355104</SwoClock>
+        <CpuClock>955981737967633739</CpuClock>
+        <SwoClock>7598542775866368778</SwoClock>
         <DataLogMode>0</DataLogMode>
         <ItmPortsEnabled>63</ItmPortsEnabled>
         <ItmTermIOPorts>1</ItmTermIOPorts>

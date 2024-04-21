@@ -6,6 +6,7 @@
         "hsp_gpio.h": "c",
         "project1.h": "c",
         "systick.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "gd32f4xx.h": "c"
     }
 }
