@@ -15,7 +15,7 @@
         <FirstRun>0</FirstRun>
     </PlDriver>
     <DebugChecksum>
-        <Checksum>654996070</Checksum>
+        <Checksum>3846791347</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -47,8 +47,8 @@
     <SWOManager>
         <SamplingDivider>8192</SamplingDivider>
         <OverrideClock>0</OverrideClock>
-        <CpuClock>8026370507100417647</CpuClock>
-        <SwoClock>7956003940571309166</SwoClock>
+        <CpuClock>2524845128218271570</CpuClock>
+        <SwoClock>7957695011148355104</SwoClock>
         <DataLogMode>0</DataLogMode>
         <ItmPortsEnabled>63</ItmPortsEnabled>
         <ItmTermIOPorts>1</ItmTermIOPorts>

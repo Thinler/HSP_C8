@@ -17,6 +17,15 @@ static uint8_t start_line_count = 0; // 起点线检测次数
 static uint32_t start_line_time = 0; // 通过起点线的时间
 bool if_start_line = false; // 是否检测到起点线
 
+// Function prototypes
+void perform_action_based_on_line_type();
+void beeper_beep(uint32_t duration_ms);
+void beep();
+uint16_t calculate_speed(uint16_t steering_signal);
+uint16_t detect_line_edges(image2_t image, uint8_t* edges);
+
+
+
 
 uint16_t calculate_speed(uint16_t steering_signal) {
     // 使用分段函数根据舵机信号调整速度
@@ -160,6 +169,7 @@ void Project_LFR(void)
 			hsp_image2_binary_minmax(image2_use, image2_temp);
 			pw = hsp_image_judge(image2_temp);
 			dc = calculate_speed(pw);
+			perform_action_based_on_line_type();
 
 			//detect initial line
 			// if_start_line = detect_start_line(image2_temp);
@@ -235,13 +245,20 @@ const double Kd = 5.0;   // Derivative gain
 int last_center = 94;
 static uint8_t last_gte_ok = RESET;
 
-	uint16_t hsp_image_judge(image2_t image) {
+uint16_t line_type = 0; // 0表示中线，1表示起始线，2表示十字线
+uint16_t line_detection_count = 0;
+
+uint16_t hsp_image_judge(image2_t image) {
     uint16_t pw = 0;
     uint8_t gte_l, gte_r, gte_ok;
     uint8_t gte_l_idx, gte_r_idx, gte_c_idx;
     int current_center;
+	uint8_t edges[IMAGEW2] = {0}; // 存储边沿位置的数组
+	uint16_t edge_count = detect_line_edges(image, edges); // 检测边沿并返回边沿数量
 
     gte_l = gte_r = gte_ok = RESET;
+	
+	// 从第20行开始检测黑线
     for (int i = 2; i < IMAGEW2 - 2; i++) {
         if (!gte_l && image[20][i] == 255 && image[20][i+1] == 0) {
             gte_l = SET;
@@ -257,18 +274,85 @@ static uint8_t last_gte_ok = RESET;
     }
 
     if (gte_ok) {
+		// 通过检测到的线的位置计算舵机PWM
         current_center = gte_c_idx;
         int error = CenterX - current_center;
         int derivative = current_center - last_center;
         pw = BasePulseWidth + (int)(Kp * error + Kd * derivative);
         last_center = current_center;
         last_gte_ok = gte_ok;
+
+	// 根据边沿的数量和位置确定线的类型
+    if (edge_count == 2) {
+        // 中线
+        line_type = 0;
+    } else if (edge_count > 3) {
+        // 根据边沿计数和上一次的线类型决定是起始线还是十字线
+        if (line_detection_count % 2 == 0) {
+            line_type = 1; // 起始线
+        } else {
+            line_type = 2; // 十字线
+        }
+        line_detection_count++;
+    }
+
+
     } else if (last_gte_ok) {
         // Use last good value if no line detected
+		// line_type = 0; // 中线
         pw = BasePulseWidth + (int)(Kp * (CenterX - last_center));
     } else {
         pw = BasePulseWidth;  // Default to center position
     }
 
     return pw;
+}
+
+
+uint16_t detect_line_edges(image2_t image, uint8_t* edges) {
+    uint16_t edge_count = 0; // 记录边沿的数量
+    uint8_t is_black = 0; // 当前像素是否为黑色
+
+    // 检测边沿
+    for (int i = 2; i < IMAGEW2 - 2; i++) {
+        // 当检测到黑到白的边沿时
+        if (image[20][i] == 0 && image[20][i + 1] == 255) {
+            edges[edge_count++] = i; // 记录边沿位置
+        }
+        // 当检测到白到黑的边沿时
+        else if (image[20][i] == 255 && image[20][i + 1] == 0 ) {
+            edges[edge_count++] = i; // 记录边沿位置
+        }
+    }
+    return edge_count; // 返回边沿的数量
+}
+
+
+
+void beeper_beep(uint32_t duration_ms) {
+    // 控制蜂鸣器鸣叫指定的毫秒数
+	BUZZ_ON();
+	delay_1ms(duration_ms);
+	BUZZ_OFF();
+
+}
+
+void beep() {
+	// 控制蜂鸣器鸣叫100毫秒
+	beeper_beep(100);
+}
+
+
+void perform_action_based_on_line_type() {
+	if (line_type == 1) {
+		// 如果检测到起始线，beep一声
+		beep();
+
+		
+	} else if (line_type == 2) {
+		// 如果检测到十字线，beep两声
+		beep();
+		delay_1ms(100);
+		beep();
+	}
 }
