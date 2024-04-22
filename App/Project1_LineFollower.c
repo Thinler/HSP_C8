@@ -31,14 +31,71 @@ void check_and_perform_stop();
 
 
 
+#include <math.h>  // 包含数学库以使用exp函数
+
+
 uint16_t calculate_speed(uint16_t steering_signal) {
-    // 使用分段函数根据舵机信号调整速度
-    return 20;
+    
+	int abs_value=abs(steering_signal-1500);
+	uint16_t speed;
+	if(abs_value < 200) {
+		speed = 30;
+	}
+	// else if(abs_value < 100) {
+	// 	speed = 20;
+	// }
+	else {
+		speed = 25;
+	}
+	hsp_tft18_show_int16(0, 20, speed);
+	return speed;
+
 }
+
+
+
+
+// #include <math.h>  // 包含数学库以使用exp函数
+
+// #define V_MAX 30   // 最大速度
+// #define K 0.15     // 适度调整衰减系数，使减速不过激
+// #define MAX_DEVIATION 500 // 最大偏差
+// #define EARLY_REDUCTION_THRESHOLD 100  // 适中的轻微调整速度阈值
+// #define CRITICAL_REDUCTION_THRESHOLD 250  // 合适的强制大幅度降速阈值
+// #define MIN_SPEED 16  // 最小速度设置为16
+
+// uint16_t calculate_speed(uint16_t steering_signal, uint16_t last_steering_signal) {
+    // int deviation = abs(1500 - steering_signal);
+    // int last_deviation = abs(1500 - last_steering_signal);
+
+    // // 根据舵机信号变化趋势预测弯道
+    // double prediction_factor = 1.0;
+    // if (deviation > last_deviation) {
+    //     prediction_factor = 0.8; // 预测弯道，适度提前降速
+    // }
+
+    // double reduction_factor = 1.0;
+    // if (deviation > EARLY_REDUCTION_THRESHOLD) {
+    //     reduction_factor = 0.77; // 轻微调整速度为80%
+    // }
+    // if (deviation > CRITICAL_REDUCTION_THRESHOLD) {
+    //     reduction_factor = 0.7; // 强制大幅度降速为60%
+    // }
+
+    // // 使用指数衰减函数来计算速度
+    // double exponential_factor = exp(-K * pow((double)deviation / MAX_DEVIATION, 2));
+    // uint16_t speed = (uint16_t)(V_MAX * prediction_factor * reduction_factor * exponential_factor);
+
+    // // 设置一个最小速度阈值以防车辆完全停止
+    // if (speed < MIN_SPEED) speed = MIN_SPEED;
+
+//     return speed;
+// }
 
 
 extern volatile uint32_t sys_tick_counter;
 
+// uint16_t last_pw = 1500; // 初始为中心值 // 在主循环中更新调用 
 
 void Project_LFR(void)
 {
@@ -76,22 +133,14 @@ void Project_LFR(void)
 			
 			hsp_image2_binary_minmax(image2_use, image2_temp);
 			pw = hsp_image_judge(image2_temp);
-			dc = calculate_speed(pw);
+			// dc = calculate_speed(pw);
+			
+			dc = calculate_speed(pw); // 根据当前和上一次的舵机信号调整速度 
+			// last_pw = pw; // 更新上一次的舵机信号为当前值 
+			// hsp_motor_voltage(MOTORF, dc); // 应用新的速度设置
+
 			perform_action_based_on_line_type();
 
-		
-
-            // // 图像显示和其他界面更新逻辑
-            // if (!SW1()) {
-            //     hsp_image2_show_dma(image2_use);
-            // } else {
-            //     hsp_image2_show_dma(image2_temp);
-            // }
-            // hsp_tft18_set_region(0, 0, TFT_X_MAX-1, TFT_Y_MAX-1);
-            // hsp_tft18_show_int16(0, 0, pw);
-            // hsp_tft18_show_int16_color(56, 0, encoder_speed, WHITE, BLACK);
-
-            // image_ready = RESET;
 
 			check_and_perform_stop();
 
@@ -166,12 +215,14 @@ void Project_LFR(void)
 // Constants
 #define CenterX 94
 const int BasePulseWidth = 1500;
-const double Kp = 10.0;  // Proportional gain
+const double Kp = 20.0;  // Proportional gain
+const double Ki = 0;   // Integral gain
 const double Kd = 5.0;   // Derivative gain
-#define BLACKPOINTS_THRESHOLD 50
+#define BLACKPOINTS_THRESHOLD 60
 // Variables
 int last_center = 94;
 static uint8_t last_gte_ok = RESET;
+static int integral_error = 0; // Initialize integral error
 
 uint16_t line_type = 0; // 0表示中线，1表示起始线，2表示十字线
 
@@ -211,7 +262,10 @@ uint16_t hsp_image_judge(image2_t image) {
         current_center = gte_c_idx;
         int error = CenterX - current_center;
         int derivative = current_center - last_center;
-        pw = BasePulseWidth + (int)(Kp * error + Kd * derivative);
+
+		integral_error += error;
+
+        pw = BasePulseWidth + Kp * error + Ki * integral_error + Kd * derivative;
         last_center = current_center;
         last_gte_ok = gte_ok;
 
@@ -237,7 +291,7 @@ uint16_t hsp_image_judge(image2_t image) {
     } else if (last_gte_ok) {
         // Use last good value if no line detected
 		// line_type = 0; // 中线
-        pw = BasePulseWidth + (int)(Kp * (CenterX - last_center));
+        pw = BasePulseWidth + (int)(Kp * (CenterX - last_center)) + Ki * integral_error;
     } else {
         pw = BasePulseWidth;  // Default to center position
     }

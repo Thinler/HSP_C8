@@ -243,7 +243,7 @@ uint8_t hsp_menu_loop(void)
     // hsp_tft18_show_str(32, 6, menu_item0[6]);
     // hsp_tft18_show_str(32, 7, menu_item0[7]);
     
-    show_menu_cursor(ItemNumber, WHITE);
+    show_menu_cursor(3, WHITE);
     // Scroll = keySTILL;
 
     // StatusA = PHA2();   StatusB = PHB2();

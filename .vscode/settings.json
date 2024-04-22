@@ -7,6 +7,8 @@
         "project1.h": "c",
         "systick.h": "c",
         "stdio.h": "c",
-        "gd32f4xx.h": "c"
+        "gd32f4xx.h": "c",
+        "hsp_motor.h": "c",
+        "math.h": "c"
     }
 }
