@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <settings>
     <Jet>
+        <JetConnSerialNo>CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908</JetConnSerialNo>
+        <JetConnFoundProbes>CMSIS-DAP v1:000000800671ff544884654867163920a5a5a5a597969908:CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908:</JetConnFoundProbes>
+        <PrevWtdReset>Software</PrevWtdReset>
         <DisableInterrupts>0</DisableInterrupts>
         <LeaveRunning>0</LeaveRunning>
         <MultiCoreRunAll>0</MultiCoreRunAll>
         <CpuHaltOnBreakpointSet>0</CpuHaltOnBreakpointSet>
         <OnlineReset>Software</OnlineReset>
-        <JetConnSerialNo>CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908</JetConnSerialNo>
-        <JetConnFoundProbes>CMSIS-DAP v1:000000800671ff544884654867163920a5a5a5a597969908:CMSIS-DAP v2:000000800671FF544884654867163920A5A5A5A597969908:</JetConnFoundProbes>
-        <PrevWtdReset>Software</PrevWtdReset>
     </Jet>
     <PlDriver>
-        <MemConfigValue>D:\Program Files\IAR Systems\Embedded Workbench 9.2\arm\config\debugger\GD\GD32F470xG.ddf</MemConfigValue>
         <FirstRun>0</FirstRun>
+        <MemConfigValue>D:\Program Files\IAR Systems\Embedded Workbench 9.2\arm\config\debugger\GD\GD32F470xG.ddf</MemConfigValue>
     </PlDriver>
     <DebugChecksum>
         <Checksum>4132462766</Checksum>
@@ -48,7 +48,7 @@
         <SamplingDivider>8192</SamplingDivider>
         <OverrideClock>0</OverrideClock>
         <CpuClock>15</CpuClock>
-        <SwoClock>2466711242324</SwoClock>
+        <SwoClock>7310589492924147048</SwoClock>
         <DataLogMode>0</DataLogMode>
         <ItmPortsEnabled>63</ItmPortsEnabled>
         <ItmTermIOPorts>1</ItmTermIOPorts>

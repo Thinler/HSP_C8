@@ -24,33 +24,95 @@ static bool needToStop = false;  // 是否需要停车
 void perform_action_based_on_line_type();
 void beeper_beep(uint32_t duration_ms);
 void beep();
-uint16_t calculate_speed(uint16_t steering_signal);
+uint16_t calculate_speed(uint16_t steering_signal, image2_t *images, int num_images);
 uint16_t detect_black_points(image2_t image, uint8_t row);
 void check_and_perform_stop();
 
 
 
 
-#include <math.h>  // 包含数学库以使用exp函数
+#include <stdlib.h>
+#include <math.h>
 
+#define IMAGE_WIDTH 320
+#define NUM_SCAN_LINES 5
+#define CENTER_X (IMAGE_WIDTH / 2)
 
-uint16_t calculate_speed(uint16_t steering_signal) {
-    
-	int abs_value=abs(steering_signal-1500);
-	uint16_t speed;
-	if(abs_value < 200) {
-		speed = 30;
-	}
-	// else if(abs_value < 100) {
-	// 	speed = 20;
-	// }
-	else {
-		speed = 25;
-	}
-	hsp_tft18_show_int16(0, 20, speed);
-	return speed;
+// 模拟的图像类型
+// typedef unsigned char image2_t[IMAGE_WIDTH];
 
+// 检测每行的黑点中心位置
+int detect_line_center(image2_t image, int row) {
+    int left_index = -1, right_index = -1;
+    for (int i = 0; i < IMAGE_WIDTH; i++) {
+        if (image[i] == 0) { // 假设黑点值为0
+            if (left_index == -1) left_index = i;
+            right_index = i;
+        }
+    }
+    if (left_index == -1 || right_index == -1) return -1; // 没有检测到线
+    return (left_index + right_index) / 2; // 返回中心位置
 }
+
+// 估计弯道的存在
+bool estimate_curve(image2_t *images, int num_images) {
+    int last_center = CENTER_X;
+    bool is_curve = false;
+    for (int i = 0; i < num_images; i++) {
+        int center = detect_line_center(images[i], 0); // 假设只分析每张图的一行
+        if (center == -1) continue; // 没有检测到线
+
+        // 判断中心位置的移动是否超过阈值
+        if (abs(center - last_center) > 10) { // 10像素作为变化阈值
+            is_curve = true;
+        }
+        last_center = center;
+    }
+    return is_curve;
+}
+
+// 计算速度的函数
+uint16_t calculate_speed(uint16_t steering_signal, image2_t *images, int num_images) {
+    int deviation = abs(1500 - steering_signal);
+
+    double prediction_factor = 1.0;
+    if (estimate_curve(images, NUM_SCAN_LINES)) {
+        prediction_factor = 0.7; // 检测到弯道，大幅度减速
+    }
+
+    double reduction_factor = 1.0;
+    if (deviation > 100) {
+        reduction_factor = 0.8;
+    }
+    if (deviation > 250) {
+        reduction_factor = 0.6;
+    }
+
+    double exponential_factor = exp(-0.15 * pow((double)deviation / 500, 2));
+    uint16_t speed = (uint16_t)(30 * prediction_factor * reduction_factor * exponential_factor);
+
+    if (speed < 16) speed = 16;
+
+    return speed;
+}
+
+// uint16_t calculate_speed(uint16_t steering_signal) {
+    
+// 	int abs_value=abs(steering_signal-1500);
+// 	uint16_t speed;
+// 	if(abs_value < 200) {
+// 		speed = 30;
+// 	}
+// 	// else if(abs_value < 100) {
+// 	// 	speed = 20;
+// 	// }
+// 	else {
+// 		speed = 25;
+// 	}
+// 	hsp_tft18_show_int16(0, 20, speed);
+// 	return speed;
+
+// }
 
 
 
@@ -135,7 +197,7 @@ void Project_LFR(void)
 			pw = hsp_image_judge(image2_temp);
 			// dc = calculate_speed(pw);
 			
-			dc = calculate_speed(pw); // 根据当前和上一次的舵机信号调整速度 
+			dc = calculate_speed(pw,image2_temp,2); // 根据当前和上一次的舵机信号调整速度 
 			// last_pw = pw; // 更新上一次的舵机信号为当前值 
 			// hsp_motor_voltage(MOTORF, dc); // 应用新的速度设置
 
